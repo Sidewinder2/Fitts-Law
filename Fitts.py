@@ -16,7 +16,7 @@ class Trials:
                 for size in self.sizes:
                     for distance in self.distances:
                         trials.append((side * distance, size))
-        shuffle(trials)
+        shuffle(trials) # randomize the order of trials
         return trials
 
     def new_trial(self):
@@ -28,7 +28,8 @@ class Trials:
         return self.trials[self.current_trial - 1]
 
     def misclick(self):
-        self.trial_data[self.current_trial - 1]["errors"] = (self.trial_data[self.current_trial - 1]["errors"]) + 1
+        if self.current_trial > 0:
+            self.trial_data[self.current_trial - 1]["errors"] = (self.trial_data[self.current_trial - 1]["errors"]) + 1
 
     @staticmethod
     def trackMouse(mouse_x,mouse_y):
@@ -47,7 +48,8 @@ class MainCanvas:
     border_enter_color = "red"
     border_leave_color = "white"
 
-    def __init__(self, canvas, color, width, height):
+    def __init__(self, root, canvas, color, width, height):
+        self.app_root = root
         self.canvas = canvas
         self.id = canvas.create_rectangle(0, 0, width, height, fill=MainCanvas.border_leave_color, tags = "background")
         self.canvas.bind('<Motion>', self.mouseMotion)
@@ -71,10 +73,12 @@ class MainCanvas:
     def centerBoxClick(self,event):
         # user clicked center box to get new task
         x, y = event.x, event.y
-        print("you clicked the center box")
         if not self.task_was_reset:
-            self.task_was_reset = True
-            self.createTrialCircle()    # make new trial circle
+            if self.trial_tracker.current_trial < len(self.trial_tracker.trials):
+                self.task_was_reset = True
+                self.createTrialCircle()    # make new trial circle
+            else:
+                self.app_root.changePage(ThanksPage) # experiment ended; switch to the thank you page
 
     def mouseMotion(self,event):
         x, y = event.x, event.y
@@ -124,39 +128,36 @@ class Circle:
         self.circle_id = circle_id
         #self.canvas.bind("<Button-1>", self.canvas_onclick)  # bind clicking the canvas to canvas_onclick method
 
-class Application(Frame):
-    elements = dict()       # create a dictionary that houses all the objects, so you can reference them in other methods
+class App(Tk):
+    # manages pages and data across the app
+    def __init__(self):
+        Tk.__init__(self)
+        self._frame = None
+        self.configureApp()
+        #self.setDropdowns()
+        self.changePage(ConsentPage)
 
-    def __init__(self, master=None):
-        Frame.__init__(self, master)
-        self.grid()
-        self.master.title("Test Project")
+    def configureApp(self):
+        self.attributes("-fullscreen", False)  # starts in windowed
+        self.resizable(width=False, height=False)  # cannot resize window
+        self.title("Clicking Experiment")
 
-        # configure all the rows and columns to have default weights
-        for r in range(1):  # height in rows
-            self.master.rowconfigure(r, weight=1)
-        for c in range(1):  # width in columns
-            self.master.columnconfigure(c, weight=1)
-
-
+    def setDropdowns(self):
         ########## menu bar
-        menu = Menu(master)       # add menu to root
-        master.config(menu=menu)    # configure it to have one
-
+        menu = Menu()  # add menu to root
+        self.config(menu=menu)  # configure it to have one
 
         # File menu dropdown
-        filemenu = Menu(menu)   # file submenu
+        filemenu = Menu(menu)  # file submenu
         menu.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="New", command=MenuStuff.NewFile)
         filemenu.add_command(label="Open...")
         filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=master.quit)
+        filemenu.add_command(label="Exit", command=quit)
 
         # options menu dropdown
         helpmenu = Menu(menu)
         menu.add_cascade(label="Options", menu=helpmenu)
-        helpmenu.add_command(label="About...", command=MenuStuff.About)
-        helpmenu.add_command(label="About...", command=MenuStuff.About)
         helpmenu.add_command(label="About...", command=MenuStuff.About)
 
         # help menu dropdown
@@ -164,23 +165,74 @@ class Application(Frame):
         menu.add_cascade(label="Help", menu=helpmenu)
         helpmenu.add_command(label="About...", command=MenuStuff.About)
 
+    def changePage(self, frame_class):
+        """Destroys current frame and replaces it with a new one."""
+        new_frame = frame_class(self)
+        if self._frame is not None:
+            self._frame.destroy()
+        self._frame = new_frame
+        self._frame.grid()
+
+class ConsentPage(Frame):
+    def __init__(self, master=None):
+        f = Frame.__init__(self, master)
+
+        text = Label(self,text = "This is a test consent form\n"
+                                 "some legal things here\n "
+                                 "we're not liable for death or maimings")
+        text.grid(row = 0, column = 0)
+
+        self.columnconfigure(0, minsize=1000, weight=6)
+        self.rowconfigure(0, minsize=600, weight=6)
+
+        consent_button = Button(self, text="I consent to SCIIIIIIEEENCE!!!",
+                                command=lambda: master.changePage(ApplicationPage))
+
+        consent_button.grid(row = 1, column = 0)
+        self.rowconfigure(1, minsize=100, weight=6)
+
+class ApplicationPage(Frame):
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.grid()
+        self.elements = dict()       # create a dictionary that houses all the objects, so you can reference them in other methods
+
+        # configure all the rows and columns to have default weights
+        for r in range(1):  # height in rows
+            self.rowconfigure(r, weight=1)
+        for c in range(1):  # width in columns
+            self.columnconfigure(c, weight=1)
 
         ########### main canvas for graph rendering
         # make a frame to house the main canvas. The frame adheres to the grid scheme but the canvas is packed
-        Application.elements["main_canvas_background"] = Frame(master, bg="grey")
-        Application.elements["main_canvas_background"].grid(row=0, column=0, rowspan=1, columnspan=1, sticky=N + W + S + E)
-        self.master.columnconfigure(0, minsize=1000, weight=6)
-        self.master.rowconfigure(0, minsize=100, weight=6)
+        self.elements["main_canvas_background"] = Frame(self, bg="grey")
+        self.elements["main_canvas_background"].grid(row=0, column=0, rowspan=1, columnspan=1, sticky=N + W + S + E)
+        self.columnconfigure(0, minsize=1000, weight=6)
+        self.rowconfigure(0, minsize=100, weight=6)
 
         # main canvas
-        Application.elements["main_canvas"] = Canvas(Application.elements["main_canvas_background"], width=1000, height=700, bd=0, highlightthickness=0)
-        Application.elements["main_canvas"].pack()
+        self.elements["main_canvas"] = Canvas(self.elements["main_canvas_background"], width=1000, height=700, bd=0, highlightthickness=0)
+        self.elements["main_canvas"].pack()
 
         # add a background renderer and a ball to the canvas
-        border = MainCanvas(Application.elements["main_canvas"], "white", 1000, 700)
+        border = MainCanvas(master, self.elements["main_canvas"], "white", 1000, 700)
 
-root = Tk()
-root.attributes("-fullscreen", False)  # starts in windowed
-root.resizable(width=False, height=False)   # cannot resize window
-app = Application(master=root)
-app.mainloop()
+class ThanksPage(Frame):
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.grid()
+
+        text = Label(master, text="Thank you for participating in this study")
+        text.grid(row=0, column=0)
+
+        self.columnconfigure(0, minsize=1000, weight=6)
+        self.rowconfigure(0, minsize=600, weight=6)
+
+        consent_button = Button(self, text = "close", command = quit)
+
+        consent_button.grid(row=1, column=0)
+        self.rowconfigure(1, minsize=100, weight=6)
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
