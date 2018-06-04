@@ -5,8 +5,8 @@ class Trials:
     def __init__(self):
         self.trial_data = dict()
         self.current_trial = 0
-        self.sizes = [10, 40]
-        self.distances = [100, 200, 400]
+        self.sizes = [10, 20, 40]
+        self.distances = [100, 300]
         self.trials = self.generateTrials()
 
     def generateTrials(self):
@@ -24,6 +24,7 @@ class Trials:
         self.trial_data[self.current_trial]["mouse_path"] = list()
         self.trial_data[self.current_trial]["errors"] = 0
         self.trial_data[self.current_trial]["distance"] = 0
+        self.trial_data[self.current_trial]["time"] = 0
         self.current_trial += 1
         return self.trials[self.current_trial - 1]
 
