@@ -12,11 +12,13 @@ class Trials:
     def generateTrials(self):
         trials = list()
         for i in range(0,10):
+            block = list()
             for side in [-1,1]:
                 for size in self.sizes:
                     for distance in self.distances:
-                        trials.append((side * distance, size))
-        shuffle(trials) # randomize the order of trials
+                        block.append((side * distance, size))
+            shuffle(block)  # randomize the order of trials
+            trials = trials + block
         return trials
 
     def new_trial(self):
