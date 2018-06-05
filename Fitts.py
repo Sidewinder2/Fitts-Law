@@ -67,7 +67,7 @@ class MainCanvas:
         self.app_root = root
         self.canvas = canvas
         self.id = canvas.create_rectangle(0, 0, width, height, fill=MainCanvas.border_leave_color, tags="background")
-        self.canvas.bind('<Motion>', self.mouseMotion)
+        self.canvas.bind('<Motion>', self.onMouseMove)
         self.width = width
         self.height = height
 
@@ -82,11 +82,11 @@ class MainCanvas:
 
         self.center_box = canvas.create_rectangle(width / 2 - 10, height / 2 - 10, width / 2 + 10, height / 2 + 10,
                                                   fill="orange", tags="center_box")
-        self.canvas.tag_bind("center_box", '<ButtonPress-1>', self.centerBoxClick)
+        self.canvas.tag_bind("center_box", '<ButtonPress-1>', self.onCenterBoxClick)
 
         self.task_was_reset = False  # flag to force people to click the center button to reset the task
 
-    def centerBoxClick(self, event):
+    def onCenterBoxClick(self, event):
         # user clicked center box to get new task
         mouse_x, mouse_y = event.x, event.y
         if not self.task_was_reset:
@@ -100,7 +100,7 @@ class MainCanvas:
                 print("trial data", self.trial_tracker.trial_data)
                 self.app_root.changePage(ThanksPage)  # experiment ended; switch to the thank you page
 
-    def mouseMotion(self, event):
+    def onMouseMove(self, event):
         mouse_x, mouse_y = event.x, event.y
         if self.task_was_reset:
             self.trial_tracker.trackMouseDistance(mouse_x, mouse_y)
