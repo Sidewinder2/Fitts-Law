@@ -240,8 +240,7 @@ class ApplicationPage(Frame):
                                               highlightthickness=0)
         self.elements["main_canvas"].pack()
 
-        # add a background renderer and a ball to the canvas
-        border = MainCanvas(master, self.elements["main_canvas"], "white", 1000, 700)
+        self.border = MainCanvas(master, self.elements["main_canvas"], "white", 1000, 700)
 
 
 class ThanksPage(Frame):
