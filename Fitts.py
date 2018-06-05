@@ -57,15 +57,6 @@ class Trials:
     def distance(p0, p1):
         return sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
-class MenuStuff:
-    @staticmethod
-    def NewFile():
-        print("New File!")
-
-    @staticmethod
-    def About():
-        print("This is a simple example of a menu")
-
 class MainCanvas:
     border_enter_color = "red"
     border_leave_color = "white"
@@ -153,7 +144,6 @@ class Circle:
         self.parent = parent
         self.canvas = canvas
         self.circle_id = circle_id
-        #self.canvas.bind("<Button-1>", self.canvas_onclick)  # bind clicking the canvas to canvas_onclick method
 
 class App(Tk):
     # manages pages and data across the app
@@ -161,36 +151,13 @@ class App(Tk):
         Tk.__init__(self)
         self._frame = None
         self.configureApp()
-        #self.setDropdowns()
         self.changePage(ConsentPage)
 
     def configureApp(self):
         self.attributes("-fullscreen", False)  # starts in windowed
         self.resizable(width=False, height=False)  # cannot resize window
+        self.maxsize(1000,800)
         self.title("Clicking Experiment")
-
-    def setDropdowns(self):
-        ########## menu bar
-        menu = Menu()  # add menu to root
-        self.config(menu=menu)  # configure it to have one
-
-        # File menu dropdown
-        filemenu = Menu(menu)  # file submenu
-        menu.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(label="New", command=MenuStuff.NewFile)
-        filemenu.add_command(label="Open...")
-        filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=quit)
-
-        # options menu dropdown
-        helpmenu = Menu(menu)
-        menu.add_cascade(label="Options", menu=helpmenu)
-        helpmenu.add_command(label="About...", command=MenuStuff.About)
-
-        # help menu dropdown
-        helpmenu = Menu(menu)
-        menu.add_cascade(label="Help", menu=helpmenu)
-        helpmenu.add_command(label="About...", command=MenuStuff.About)
 
     def changePage(self, frame_class):
         """Destroys current frame and replaces it with a new one."""
@@ -212,7 +179,28 @@ class ConsentPage(Frame):
         self.columnconfigure(0, minsize=1000, weight=6)
         self.rowconfigure(0, minsize=600, weight=6)
 
-        consent_button = Button(self, text="I consent to SCIIIIIIEEENCE!!!",
+        consent_button = Button(self, text="I consent to this experiment",
+                                command=lambda: master.changePage(InstructionPage))
+
+        consent_button.grid(row = 1, column = 0)
+        self.rowconfigure(1, minsize=100, weight=6)
+
+class InstructionPage(Frame):
+    def __init__(self, master=None):
+        f = Frame.__init__(self, master)
+
+        text = Label(self,text =    "Instructions\n\n\n"
+                                    "Click the orange square in the center to begin a task\n "
+                                    "Then click the circle that pops up as quickly as possible\n"
+                                    "Repeat as many times as directed"
+                    )
+        text.config(font=("Courier", 20))
+        text.grid(row = 0, column = 0)
+
+        self.columnconfigure(0, minsize=1000, weight=6)
+        self.rowconfigure(0, minsize=600, weight=6)
+
+        consent_button = Button(self, text="Begin trials",
                                 command=lambda: master.changePage(ApplicationPage))
 
         consent_button.grid(row = 1, column = 0)
@@ -250,6 +238,7 @@ class ThanksPage(Frame):
         self.grid()
 
         text = Label(master, text="Thank you for participating in this study")
+        text.config(font=("Courier", 20))
         text.grid(row=0, column=0)
 
         self.columnconfigure(0, minsize=1000, weight=6)
