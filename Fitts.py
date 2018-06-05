@@ -222,7 +222,7 @@ class ApplicationPage(Frame):
         self.grid()
         self.elements = dict()  # create a dictionary that houses all the objects, so you can reference them in other methods
 
-        # configure all the rows and columns to have default weights
+        # configure all the rows and columns to have default weights (z-index)
         for r in range(1):  # height in rows
             self.rowconfigure(r, weight=1)
         for c in range(1):  # width in columns
