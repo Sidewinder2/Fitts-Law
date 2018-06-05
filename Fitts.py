@@ -1,5 +1,7 @@
 from tkinter import *
 from random import randint, shuffle
+from math import sqrt
+from time import time
 
 class Trials:
     def __init__(self):
@@ -8,10 +10,12 @@ class Trials:
         self.sizes = [10, 20, 40]
         self.distances = [100, 300]
         self.trials = self.generateTrials()
+        self.mouse_lastx = 0
+        self.mouse_lasty = 0
 
     def generateTrials(self):
         trials = list()
-        for i in range(0,10):
+        for i in range(0,1):
             block = list()
             for side in [-1,1]:
                 for size in self.sizes:
@@ -23,20 +27,35 @@ class Trials:
 
     def new_trial(self):
         self.trial_data[self.current_trial] = dict()
-        self.trial_data[self.current_trial]["mouse_path"] = list()
         self.trial_data[self.current_trial]["errors"] = 0
         self.trial_data[self.current_trial]["distance"] = 0
-        self.trial_data[self.current_trial]["time"] = 0
+        self.trial_data[self.current_trial]["start_time"] = time()
+        self.trial_data[self.current_trial]["end_time"] = 0
+
         self.current_trial += 1
+
         return self.trials[self.current_trial - 1]
 
     def misclick(self):
         if self.current_trial > 0:
             self.trial_data[self.current_trial - 1]["errors"] = (self.trial_data[self.current_trial - 1]["errors"]) + 1
 
+    def setEndTime(self, end_time):
+        if self.current_trial > 0:
+            self.trial_data[self.current_trial - 1]["end_time"] = end_time
+
+    def updateMouseLast(self, mouse_x,mouse_y):
+        self.mouse_lastx = mouse_x
+        self.mouse_lasty = mouse_y
+
+    def trackMouseDistance(self, mouse_x, mouse_y):
+        dist = self.distance([self.mouse_lastx,self.mouse_lasty],[mouse_x,mouse_y])
+        self.trial_data[self.current_trial - 1]["distance"] = self.trial_data[self.current_trial - 1]["distance"] + dist
+        self.updateMouseLast(mouse_x,mouse_y)
+
     @staticmethod
-    def trackMouse(mouse_x,mouse_y):
-        pass
+    def distance(p0, p1):
+        return sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
 class MenuStuff:
     @staticmethod
@@ -75,17 +94,22 @@ class MainCanvas:
 
     def centerBoxClick(self,event):
         # user clicked center box to get new task
-        x, y = event.x, event.y
+        mouse_x, mouse_y = event.x, event.y
         if not self.task_was_reset:
+            self.trial_tracker.setEndTime(time())
+
             if self.trial_tracker.current_trial < len(self.trial_tracker.trials):
                 self.task_was_reset = True
+                self.trial_tracker.updateMouseLast(mouse_x,mouse_y)
                 self.createTrialCircle()    # make new trial circle
             else:
+                print("trial data", self.trial_tracker.trial_data)
                 self.app_root.changePage(ThanksPage) # experiment ended; switch to the thank you page
 
     def mouseMotion(self,event):
-        x, y = event.x, event.y
-        #print('{}, {}'.format(x, y))
+        mouse_x, mouse_y = event.x, event.y
+        if self.task_was_reset:
+            self.trial_tracker.trackMouseDistance(mouse_x,mouse_y)
 
     def onBackgroundClick(self, event):
         # user missed the button
