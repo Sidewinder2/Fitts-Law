@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS `participants` (
 CREATE TABLE IF NOT EXISTS `blocks` (
   `id` INTEGER primary key AUTOINCREMENT NOT NULL,
   `participant_id` INTEGER NOT NULL,
-  `started_at` TIMESTAMP NULL,
-  `finished_at` TIMESTAMP NULL,
+  `started_at` REAL NOT NULL,
+  `finished_at` REAL NOT NULL,
   CONSTRAINT `fk_blocks_participants`
     FOREIGN KEY (`participant_id`)
     REFERENCES `participants` (`id`)
@@ -36,25 +36,23 @@ CREATE TABLE IF NOT EXISTS `blocks` (
 -- Table `tasks`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `tasks` (
-  `id` INTEGER AUTOINCREMENT NOT NULL,
+  `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   `diameter` INTEGER NULL,
   `distance` INTEGER NULL,
-  `direction` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`));
+  `direction` VARCHAR(45) NULL);
 
 
 -- -----------------------------------------------------
 -- Table `trials`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `trials` (
-  `id` INTEGER AUTOINCREMENT NOT NULL,
+  `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   `block_id` INTEGER NOT NULL,
   `task_id` INTEGER NOT NULL,
-  `started_at` TIMESTAMP NULL,
-  `finished_at` TIMESTAMP NULL,
-  `distance_travelled` INTEGER NULL,
-  `errors` INTEGER NULL,
-  PRIMARY KEY (`id`),
+  `started_at` REAL NOT NULL,
+  `finished_at` REAL NOT NULL,
+  `distance_travelled` INTEGER NOT NULL,
+  `errors` INTEGER NOT NULL,
   CONSTRAINT `fk_trials_blocks1`
     FOREIGN KEY (`block_id`)
     REFERENCES `blocks` (`id`)
