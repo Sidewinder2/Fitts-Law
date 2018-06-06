@@ -2,6 +2,29 @@ from tkinter import *
 from random import randint, shuffle
 from math import sqrt
 from time import time
+import sqlite3
+
+
+class SQLHandler():
+    db = sqlite3.connect('example.db')
+    curs = db.cursor()
+
+    @staticmethod
+    def getBlookIDs():
+        pass
+
+    @staticmethod
+    def insertTrialData(trial_data):
+        for block in trial_data.keys():
+            print("block: ",block)
+            for trial in trial_data[block].keys():
+                print("\t",trial, trial_data[block][trial])
+                #curs.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
+        SQLHandler.db.commit()
+
+    @staticmethod
+    def closeDB():
+        SQLHandler.db.close()
 
 
 class Trials:
@@ -10,40 +33,53 @@ class Trials:
         self.current_trial = 0
         self.sizes = [10, 20, 40]
         self.distances = [100, 300]
-        self.trials = self.generateTrials()
+        self.block = self.generateBlock()
+        self.current_block = list()
+        self.max_blocks = 1
+        self.block_countdown = self.max_blocks
         self.mouse_lastx = 0
         self.mouse_lasty = 0
+        self.trial_counter = 0  # simple counter used for number of trials complete
+        self.trial_max = len(self.block) * self.max_blocks
 
-    def generateTrials(self):
-        trials = list()
-        for i in range(0, 1):
-            block = list()
-            for side in [-1, 1]:
-                for size in self.sizes:
-                    for distance in self.distances:
-                        block.append((side * distance, size))
-            shuffle(block)  # randomize the order of trials
-            trials = trials + block
-        return trials
+    def generateBlock(self):
+        block = list()
+        for side in [-1, 1]:
+            for size in self.sizes:
+                for distance in self.distances:
+                    block.append((side * distance, size))
+        return block
 
-    def new_trial(self):
-        self.trial_data[self.current_trial] = dict()
-        self.trial_data[self.current_trial]["errors"] = 0
-        self.trial_data[self.current_trial]["distance"] = 0
-        self.trial_data[self.current_trial]["start_time"] = time()
-        self.trial_data[self.current_trial]["end_time"] = 0
+    def getNextTrial(self):
+        if(len(self.current_block) > 0):
+            self.current_trial = self.current_block.pop()       # get the next trial tuple
+        else:
+            # start of new block
+            self.block_countdown -= 1
+            if self.block_countdown >= 0:
+                self.current_block = list(self.block)
+                shuffle(self.current_block)     # randomize the order
+                self.current_trial = self.current_block.pop()  # get the next trial tuple
+                self.trial_data[self.block_countdown] = dict()
+            else:
+                return None # experiment over
 
-        self.current_trial += 1
+        self.trial_counter += 1
+        self.trial_data[self.block_countdown][self.current_trial] = dict()
+        self.trial_data[self.block_countdown][self.current_trial]["errors"] = 0
+        self.trial_data[self.block_countdown][self.current_trial]["distance"] = 0
+        self.trial_data[self.block_countdown][self.current_trial]["start_time"] = time()
+        self.trial_data[self.block_countdown][self.current_trial]["end_time"] = 0
 
-        return self.trials[self.current_trial - 1]
+        return self.current_trial
 
     def misclick(self):
-        if self.current_trial > 0:
-            self.trial_data[self.current_trial - 1]["errors"] = (self.trial_data[self.current_trial - 1]["errors"]) + 1
+        if self.trial_counter > 0:
+            self.trial_data[self.block_countdown][self.current_trial]["errors"] = (self.trial_data[self.block_countdown][self.current_trial]["errors"]) + 1
 
     def setEndTime(self, end_time):
-        if self.current_trial > 0:
-            self.trial_data[self.current_trial - 1]["end_time"] = end_time
+        if self.trial_counter > 0:
+            self.trial_data[self.block_countdown][self.current_trial]["end_time"] = end_time
 
     def updateMouseLast(self, mouse_x, mouse_y):
         self.mouse_lastx = mouse_x
@@ -51,8 +87,14 @@ class Trials:
 
     def trackMouseDistance(self, mouse_x, mouse_y):
         dist = self.distance([self.mouse_lastx, self.mouse_lasty], [mouse_x, mouse_y])
-        self.trial_data[self.current_trial - 1]["distance"] = self.trial_data[self.current_trial - 1]["distance"] + dist
+        self.trial_data[self.block_countdown][self.current_trial]["distance"] = self.trial_data[self.block_countdown][self.current_trial]["distance"] + dist
         self.updateMouseLast(mouse_x, mouse_y)
+
+    def printTrailData(self):
+        for block in self.trial_data.keys():
+            print("block: ",block)
+            for trial in self.trial_data[block].keys():
+                print("\t",trial, self.trial_data[block][trial])
 
     @staticmethod
     def distance(p0, p1):
@@ -91,13 +133,16 @@ class MainCanvas:
         mouse_x, mouse_y = event.x, event.y
         if not self.task_was_reset:
             self.trial_tracker.setEndTime(time())
-
-            if self.trial_tracker.current_trial < len(self.trial_tracker.trials):
+            next_trial = self.trial_tracker.getNextTrial()  # get the next trial
+            if next_trial is not None:
                 self.task_was_reset = True
                 self.trial_tracker.updateMouseLast(mouse_x, mouse_y)
-                self.createTrialCircle()  # make new trial circle
+                circle_radius = next_trial[1]
+                circle_x = next_trial[0] + (self.width / 2)
+                circle_y = self.height / 2
+                self.createCircle(circle_x, circle_y, circle_radius, "green")
             else:
-                print("trial data", self.trial_tracker.trial_data)
+                self.trial_tracker.printTrailData() # report resules
                 self.app_root.changePage(ThanksPage)  # experiment ended; switch to the thank you page
 
     def onMouseMove(self, event):
@@ -123,16 +168,8 @@ class MainCanvas:
 
     def updateProgressBar(self):
         self.canvas.itemconfig(self.text_id,
-                               text=str(self.trial_tracker.current_trial) + '/ ' + str(len(self.trial_tracker.trials)),
+                               text=str(self.trial_tracker.trial_counter) + '/ ' + str(self.trial_tracker.trial_max),
                                fill="blue")
-
-    def createTrialCircle(self):
-        # grab the trial data, then make a new circle
-        trial = self.trial_tracker.new_trial()  # get the first trial
-        circle_radius = trial[1]
-        circle_x = trial[0] + (self.width / 2)
-        circle_y = self.height / 2
-        self.createCircle(circle_x, circle_y, circle_radius, "green")
 
     def createCircle(self, x, y, radius, color):
         canvas_circle = self.canvas.create_oval(0, 0, radius * 2, radius * 2, fill=color, tags="circle")
