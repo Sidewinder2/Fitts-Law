@@ -36,16 +36,23 @@ class SQLHandler():
         db = sqlite3.connect(SQLHandler.db_path)
         curs = db.cursor()
 
+        user_id = curs.execute('INSERT INTO participants DEFAULT VALUES ').lastrowid
+
         for block in trial_data.keys():
             block_start_time = trial_data[block]["block_start_time"]
             block_end_time = trial_data[block]["block_end_time"]
+            values = [user_id,block_start_time,block_end_time]
+            block_id = curs.executemany('INSERT INTO blocks VALUES (?,?,?)',values).lastrowid
+
             print("block: ",block)
             for trial in trial_data[block].keys():
+                task_id = trial[0]
                 errors = trial_data[block][trial]["errors"]
-                distance = trial_data[block][trial]["distance"]
+                distance = int(trial_data[block][trial]["distance"])
                 start_time = trial_data[block][trial]["start_time"]
                 end_time = trial_data[block][trial]["end_time"]
-                curs.executemany('INSERT INTO main.tasks VALUES (?,?,?,?,?)', purchases)
+                values = [block_id,task_id,start_time,end_time,distance,errors]
+                curs.executemany('INSERT INTO tasks VALUES (?,?,?,?,?)', values)
         db.commit()
         db.close()
 
@@ -69,21 +76,20 @@ class Trials:
     def getNextTrial(self):
         if(len(self.current_block) > 0):
             self.current_trial = self.current_block.pop()       # get the next trial tuple
-            self.trial_data[self.block_countdown]["block_end_time"] = time()    # update end time to current time
         else:
             # start of new block
             self.block_countdown -= 1
+
             if self.block_countdown >= 0:
                 self.current_block = list(self.block)
                 shuffle(self.current_block)     # randomize the order
                 self.current_trial = self.current_block.pop()  # get the next trial tuple
                 self.trial_data[self.block_countdown] = dict()
+                self.trial_data[self.block_countdown]["block_start_time"] = time()
             else:
                 return None # experiment over
 
         self.trial_counter += 1
-        self.trial_data[self.block_countdown]["block_start_time"] = time()
-        self.trial_data[self.block_countdown]["block_end_time"] = 0
         self.trial_data[self.block_countdown][self.current_trial] = dict()
         self.trial_data[self.block_countdown][self.current_trial]["errors"] = 0
         self.trial_data[self.block_countdown][self.current_trial]["distance"] = 0
@@ -99,6 +105,7 @@ class Trials:
     def setEndTime(self, end_time):
         if self.trial_counter > 0:
             self.trial_data[self.block_countdown][self.current_trial]["end_time"] = end_time
+            self.trial_data[self.block_countdown]["block_end_time"] = time()
 
     def updateMouseLast(self, mouse_x, mouse_y):
         self.mouse_lastx = mouse_x
@@ -165,6 +172,7 @@ class MainCanvas:
                 self.createCircle(circle_x, circle_y, circle_radius, "green")
             else:
                 self.trial_tracker.printTrailData() # report resules
+                SQLHandler.insertTrialData(self.trial_tracker.trial_data)
                 self.app_root.changePage(ThanksPage)  # experiment ended; switch to the thank you page
 
     def onMouseMove(self, event):
