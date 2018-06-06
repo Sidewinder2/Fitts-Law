@@ -3,14 +3,28 @@ from random import randint, shuffle
 from math import sqrt
 from time import time
 import sqlite3
-
+from winsound import PlaySound, Beep
+from pathlib import Path
+from shutil import copyfile
 
 class SQLHandler():
-    db = sqlite3.connect('example.db')
+    import os
+    os.chdir(os.path.dirname(__file__)) # change working dir to directory of script
+    db_path = "database.sqlite"
+    # copy database from source database if needed
+    if not Path(db_path).exists():
+        copyfile("default.sqlite", db_path)
+
+    # connect to database
+    db = sqlite3.connect(db_path)
     curs = db.cursor()
 
     @staticmethod
     def getBlookIDs():
+        pass
+
+    @staticmethod
+    def addUser():
         pass
 
     @staticmethod
@@ -29,23 +43,23 @@ class SQLHandler():
 
 class Trials:
     def __init__(self):
-        self.trial_data = dict()
-        self.current_trial = 0
-        self.sizes = [10, 20, 40]
-        self.distances = [100, 300]
-        self.block = self.generateBlock()
-        self.current_block = list()
-        self.max_blocks = 1
-        self.block_countdown = self.max_blocks
-        self.mouse_lastx = 0
-        self.mouse_lasty = 0
+        self.trial_data = dict()        # contains all trial data made by user
+        self.current_trial = None       # tuple containing current task
+        self.radii = [10, 20, 40]       # sizes of the circles
+        self.distances = [100, 300]     # distances of circle from center
+        self.block = self.generateBlock()   # generate a source block with all permutations
+        self.current_block = list()     # current block of tasks; empty to make new block
+        self.max_blocks = 1             # number of blocks in program
+        self.block_countdown = self.max_blocks  # number of blocks left to do
+        self.mouse_lastx = 0            # position of last mouse x
+        self.mouse_lasty = 0            # position of last mouse x
         self.trial_counter = 0  # simple counter used for number of trials complete
         self.trial_max = len(self.block) * self.max_blocks
 
     def generateBlock(self):
         block = list()
         for side in [-1, 1]:
-            for size in self.sizes:
+            for size in self.radii:
                 for distance in self.distances:
                     block.append((side * distance, size))
         return block
@@ -162,6 +176,7 @@ class MainCanvas:
         # get the item that was clicked and remove it
         if self.canvas.find_withtag(CURRENT):
             # print(self.canvas_item_to_object[self.canvas.find_withtag(CURRENT)[0]]) # get the actual circle linked to the canvas
+            Beep(400,100)
             self.removeCircle(self.canvas.find_withtag(CURRENT)[0])
             self.task_was_reset = False
             self.updateProgressBar()
