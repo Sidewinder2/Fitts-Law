@@ -65,3 +65,16 @@ CREATE TABLE IF NOT EXISTS `trials` (
     REFERENCES `tasks` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
+
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('20','100','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('40','100','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('80','100','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('20','100','right');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('40','100','right');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('80','100','right');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('20','300','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('40','300','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('80','300','left');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('20','300','right');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('40','300','right');
+INSERT INTO `tasks` (`diameter`,`distance`,`direction`) VALUES ('80','300','right');
