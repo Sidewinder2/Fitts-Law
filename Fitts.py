@@ -6,6 +6,7 @@ import sqlite3
 from winsound import PlaySound, Beep
 from pathlib import Path
 from shutil import copyfile
+from win32api import SetCursorPos
 
 class SQLHandler():
     import os
@@ -32,12 +33,21 @@ class SQLHandler():
 
     @staticmethod
     def insertTrialData(trial_data):
+        db = sqlite3.connect(SQLHandler.db_path)
+        curs = db.cursor()
+
         for block in trial_data.keys():
+            block_start_time = trial_data[block]["block_start_time"]
+            block_end_time = trial_data[block]["block_end_time"]
             print("block: ",block)
             for trial in trial_data[block].keys():
-                print("\t",trial, trial_data[block][trial])
-                #curs.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
-        SQLHandler.db.commit()
+                errors = trial_data[block][trial]["errors"]
+                distance = trial_data[block][trial]["distance"]
+                start_time = trial_data[block][trial]["start_time"]
+                end_time = trial_data[block][trial]["end_time"]
+                curs.executemany('INSERT INTO main.tasks VALUES (?,?,?,?,?)', purchases)
+        db.commit()
+        db.close()
 
     @staticmethod
     def closeDB():
@@ -59,6 +69,7 @@ class Trials:
     def getNextTrial(self):
         if(len(self.current_block) > 0):
             self.current_trial = self.current_block.pop()       # get the next trial tuple
+            self.trial_data[self.block_countdown]["block_end_time"] = time()    # update end time to current time
         else:
             # start of new block
             self.block_countdown -= 1
@@ -71,6 +82,8 @@ class Trials:
                 return None # experiment over
 
         self.trial_counter += 1
+        self.trial_data[self.block_countdown]["block_start_time"] = time()
+        self.trial_data[self.block_countdown]["block_end_time"] = 0
         self.trial_data[self.block_countdown][self.current_trial] = dict()
         self.trial_data[self.block_countdown][self.current_trial]["errors"] = 0
         self.trial_data[self.block_countdown][self.current_trial]["distance"] = 0
@@ -175,6 +188,10 @@ class MainCanvas:
             self.removeCircle(self.canvas.find_withtag(CURRENT)[0])
             self.task_was_reset = False
             self.updateProgressBar()
+
+    def resetMousePosition(self):
+        screen_x, screen_y = int(self.canvas.winfo_rootx()), int(self.canvas.winfo_rooty())
+        SetCursorPos((int(screen_x + self.width / 2), int(screen_y + self.height / 2)))    # set cursor at center of canvas
 
     def updateProgressBar(self):
         self.canvas.itemconfig(self.text_id,
