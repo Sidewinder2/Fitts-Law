@@ -36,13 +36,15 @@ class SQLHandler():
         db = sqlite3.connect(SQLHandler.db_path)
         curs = db.cursor()
 
-        user_id = curs.execute('INSERT INTO participants DEFAULT VALUES ').lastrowid
+        user_id = curs.execute('INSERT INTO participants DEFAULT VALUES').lastrowid
 
         for block in trial_data.keys():
             block_start_time = trial_data[block]["block_start_time"]
             block_end_time = trial_data[block]["block_end_time"]
+            trial_data[block].pop("block_end_time")
+            trial_data[block].pop("block_start_time")
             values = [user_id,block_start_time,block_end_time]
-            block_id = curs.executemany('INSERT INTO blocks VALUES (?,?,?)',values).lastrowid
+            block_id = curs.execute('INSERT INTO blocks (participant_id, started_at, finished_at) VALUES (?,?,?)',values).lastrowid
 
             print("block: ",block)
             for trial in trial_data[block].keys():
@@ -52,7 +54,9 @@ class SQLHandler():
                 start_time = trial_data[block][trial]["start_time"]
                 end_time = trial_data[block][trial]["end_time"]
                 values = [block_id,task_id,start_time,end_time,distance,errors]
-                curs.executemany('INSERT INTO tasks VALUES (?,?,?,?,?)', values)
+                curs.execute('INSERT INTO trials (block_id,task_id,started_at,finished_at,distance_travelled,errors) VALUES (?,?,?,?,?,?)', values)
+            trial_data[block]["block_start_time"] = block_start_time
+            trial_data[block]["block_end_time"] = block_end_time
         db.commit()
         db.close()
 
@@ -66,7 +70,7 @@ class Trials:
         self.current_trial = None       # tuple containing current task
         self.block = SQLHandler.getMasterBlock()   # generate a source block with all permutations
         self.current_block = list()     # current block of tasks; empty to make new block
-        self.max_blocks = 2             # number of blocks in program
+        self.max_blocks = 3             # number of blocks in program
         self.block_countdown = self.max_blocks  # number of blocks left to do
         self.mouse_lastx = 0            # position of last mouse x
         self.mouse_lasty = 0            # position of last mouse x
