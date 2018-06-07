@@ -70,7 +70,7 @@ class Trials:
         self.current_trial = None       # tuple containing current task
         self.block = SQLHandler.getMasterBlock()   # generate a source block with all permutations
         self.current_block = list()     # current block of tasks; empty to make new block
-        self.max_blocks = 3             # number of blocks in program
+        self.max_blocks = 10             # number of blocks in program
         self.block_countdown = self.max_blocks  # number of blocks left to do
         self.mouse_lastx = 0            # position of last mouse x
         self.mouse_lasty = 0            # position of last mouse x
