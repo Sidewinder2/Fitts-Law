@@ -8,9 +8,10 @@ from pathlib import Path
 from shutil import copyfile
 from win32api import SetCursorPos
 
+
 class SQLHandler():
     import os
-    os.chdir(os.path.dirname(__file__)) # change working dir to directory of script
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # change working dir to directory of script
     db_path = "database.sqlite"
     # copy database from source database if needed
     if not Path(db_path).exists():
@@ -43,18 +44,21 @@ class SQLHandler():
             block_end_time = trial_data[block]["block_end_time"]
             trial_data[block].pop("block_end_time")
             trial_data[block].pop("block_start_time")
-            values = [user_id,block_start_time,block_end_time]
-            block_id = curs.execute('INSERT INTO blocks (participant_id, started_at, finished_at) VALUES (?,?,?)',values).lastrowid
+            values = [user_id, block_start_time, block_end_time]
+            block_id = curs.execute('INSERT INTO blocks (participant_id, started_at, finished_at) VALUES (?,?,?)',
+                                    values).lastrowid
 
-            print("block: ",block)
+            print("block: ", block)
             for trial in trial_data[block].keys():
                 task_id = trial[0]
                 errors = trial_data[block][trial]["errors"]
                 distance = int(trial_data[block][trial]["distance"])
                 start_time = trial_data[block][trial]["start_time"]
                 end_time = trial_data[block][trial]["end_time"]
-                values = [block_id,task_id,start_time,end_time,distance,errors]
-                curs.execute('INSERT INTO trials (block_id,task_id,started_at,finished_at,distance_travelled,errors) VALUES (?,?,?,?,?,?)', values)
+                values = [block_id, task_id, start_time, end_time, distance, errors]
+                curs.execute(
+                    'INSERT INTO trials (block_id,task_id,started_at,finished_at,distance_travelled,errors) VALUES (?,?,?,?,?,?)',
+                    values)
             trial_data[block]["block_start_time"] = block_start_time
             trial_data[block]["block_end_time"] = block_end_time
         db.commit()
@@ -64,34 +68,35 @@ class SQLHandler():
     def closeDB():
         SQLHandler.db.close()
 
+
 class Trials:
     def __init__(self):
-        self.trial_data = dict()        # contains all trial data made by user
-        self.current_trial = None       # tuple containing current task
-        self.block = SQLHandler.getMasterBlock()   # generate a source block with all permutations
-        self.current_block = list()     # current block of tasks; empty to make new block
-        self.max_blocks = 10             # number of blocks in program
+        self.trial_data = dict()  # contains all trial data made by user
+        self.current_trial = None  # tuple containing current task
+        self.block = SQLHandler.getMasterBlock()  # generate a source block with all permutations
+        self.current_block = list()  # current block of tasks; empty to make new block
+        self.max_blocks = 10  # number of blocks in program
         self.block_countdown = self.max_blocks  # number of blocks left to do
-        self.mouse_lastx = 0            # position of last mouse x
-        self.mouse_lasty = 0            # position of last mouse x
+        self.mouse_lastx = 0  # position of last mouse x
+        self.mouse_lasty = 0  # position of last mouse x
         self.trial_counter = 0  # simple counter used for number of trials complete
         self.trial_max = len(self.block) * self.max_blocks
 
     def getNextTrial(self):
-        if(len(self.current_block) > 0):
-            self.current_trial = self.current_block.pop()       # get the next trial tuple
+        if (len(self.current_block) > 0):
+            self.current_trial = self.current_block.pop()  # get the next trial tuple
         else:
             # start of new block
             self.block_countdown -= 1
 
             if self.block_countdown >= 0:
                 self.current_block = list(self.block)
-                shuffle(self.current_block)     # randomize the order
+                shuffle(self.current_block)  # randomize the order
                 self.current_trial = self.current_block.pop()  # get the next trial tuple
                 self.trial_data[self.block_countdown] = dict()
                 self.trial_data[self.block_countdown]["block_start_time"] = time()
             else:
-                return None # experiment over
+                return None  # experiment over
 
         self.trial_counter += 1
         self.trial_data[self.block_countdown][self.current_trial] = dict()
@@ -104,7 +109,9 @@ class Trials:
 
     def misclick(self):
         if self.trial_counter > 0:
-            self.trial_data[self.block_countdown][self.current_trial]["errors"] = (self.trial_data[self.block_countdown][self.current_trial]["errors"]) + 1
+            self.trial_data[self.block_countdown][self.current_trial]["errors"] = (
+                                                                                  self.trial_data[self.block_countdown][
+                                                                                      self.current_trial]["errors"]) + 1
 
     def setEndTime(self, end_time):
         if self.trial_counter > 0:
@@ -117,14 +124,15 @@ class Trials:
 
     def trackMouseDistance(self, mouse_x, mouse_y):
         dist = self.distance([self.mouse_lastx, self.mouse_lasty], [mouse_x, mouse_y])
-        self.trial_data[self.block_countdown][self.current_trial]["distance"] = self.trial_data[self.block_countdown][self.current_trial]["distance"] + dist
+        self.trial_data[self.block_countdown][self.current_trial]["distance"] = \
+        self.trial_data[self.block_countdown][self.current_trial]["distance"] + dist
         self.updateMouseLast(mouse_x, mouse_y)
 
     def printTrailData(self):
         for block in self.trial_data.keys():
-            print("block: ",block)
+            print("block: ", block)
             for trial in self.trial_data[block].keys():
-                print("\t",trial, self.trial_data[block][trial])
+                print("\t", trial, self.trial_data[block][trial])
 
     @staticmethod
     def distance(p0, p1):
@@ -167,7 +175,7 @@ class MainCanvas:
             if next_trial is not None:
                 self.task_was_reset = True
                 self.trial_tracker.updateMouseLast(mouse_x, mouse_y)
-                direction_modifier = 1      # flips the direction of the circle right or left of center
+                direction_modifier = 1  # flips the direction of the circle right or left of center
                 if next_trial[3] == "left":
                     direction_modifier = -1
                 circle_radius = next_trial[1]
@@ -175,7 +183,7 @@ class MainCanvas:
                 circle_y = self.height / 2
                 self.createCircle(circle_x, circle_y, circle_radius, "green")
             else:
-                self.trial_tracker.printTrailData() # report resules
+                self.trial_tracker.printTrailData()  # report resules
                 SQLHandler.insertTrialData(self.trial_tracker.trial_data)
                 self.app_root.changePage(ThanksPage)  # experiment ended; switch to the thank you page
 
@@ -196,14 +204,15 @@ class MainCanvas:
         # get the item that was clicked and remove it
         if self.canvas.find_withtag(CURRENT):
             # print(self.canvas_item_to_object[self.canvas.find_withtag(CURRENT)[0]]) # get the actual circle linked to the canvas
-            Beep(400,100)
+            Beep(400, 100)
             self.removeCircle(self.canvas.find_withtag(CURRENT)[0])
             self.task_was_reset = False
             self.updateProgressBar()
 
     def resetMousePosition(self):
         screen_x, screen_y = int(self.canvas.winfo_rootx()), int(self.canvas.winfo_rooty())
-        SetCursorPos((int(screen_x + self.width / 2), int(screen_y + self.height / 2)))    # set cursor at center of canvas
+        SetCursorPos(
+            (int(screen_x + self.width / 2), int(screen_y + self.height / 2)))  # set cursor at center of canvas
 
     def updateProgressBar(self):
         self.canvas.itemconfig(self.text_id,
