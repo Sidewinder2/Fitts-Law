@@ -110,8 +110,10 @@ class Trials:
     def misclick(self):
         if self.trial_counter > 0:
             self.trial_data[self.block_countdown][self.current_trial]["errors"] = (
-                                                                                  self.trial_data[self.block_countdown][
-                                                                                      self.current_trial]["errors"]) + 1
+                                                                                      self.trial_data[
+                                                                                          self.block_countdown][
+                                                                                          self.current_trial][
+                                                                                          "errors"]) + 1
 
     def setEndTime(self, end_time):
         if self.trial_counter > 0:
@@ -125,7 +127,7 @@ class Trials:
     def trackMouseDistance(self, mouse_x, mouse_y):
         dist = self.distance([self.mouse_lastx, self.mouse_lasty], [mouse_x, mouse_y])
         self.trial_data[self.block_countdown][self.current_trial]["distance"] = \
-        self.trial_data[self.block_countdown][self.current_trial]["distance"] + dist
+            self.trial_data[self.block_countdown][self.current_trial]["distance"] + dist
         self.updateMouseLast(mouse_x, mouse_y)
 
     def printTrailData(self):
@@ -264,15 +266,19 @@ class ConsentPage(Frame):
     def __init__(self, master=None):
         f = Frame.__init__(self, master)
 
-        text = Label(self, text="This is a test consent form\n"
-                                "some legal things here\n "
-                                "we're not liable for death or maimings")
+        text = Label(self, text="You are requested to participate in this research study on target acquisition.\n"
+                                "The study should take between 5 to 10 minutes to complete.\n"
+                                "Participation is voluntary. You have the option to not respond to any question.\n"
+                                "You may stop at any time. All information will remain anonymous.\n"
+                                "If you are willing to consent and continue then click the 'I Consent' button.\n"
+                                "If you do not consent, you may exit the window now."
+                     )
         text.grid(row=0, column=0)
 
         self.columnconfigure(0, minsize=1000, weight=6)
         self.rowconfigure(0, minsize=600, weight=6)
 
-        consent_button = Button(self, text="I consent to this experiment",
+        consent_button = Button(self, text="I Consent",
                                 command=lambda: master.changePage(InstructionPage))
 
         consent_button.grid(row=1, column=0)
@@ -284,9 +290,11 @@ class InstructionPage(Frame):
         f = Frame.__init__(self, master)
 
         text = Label(self, text="Instructions\n\n\n"
-                                "Click the orange square in the center to begin a task\n "
-                                "Then click the circle that pops up as quickly as possible\n"
-                                "Repeat as many times as directed"
+                                "Click the orange square to begin each task.\n"
+                                "A green circle will appear. Your goal is to click the green circle as quickly as possible.\n"
+                                "You also want to have the smallest number of errors as possible. An error is a click that misses the green circle.\n"
+                                "When you have successfully clicked the circle, you will hear a beep. After the beep, you may click the organge square to start the next task.\n"
+                                "There are a total of 120 tasks. Your progress will be visible the top of the screen."
                      )
         text.config(font=("Courier", 20))
         text.grid(row=0, column=0)
