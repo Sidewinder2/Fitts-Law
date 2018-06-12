@@ -290,13 +290,14 @@ class InstructionPage(Frame):
         f = Frame.__init__(self, master)
 
         text = Label(self, text="Instructions\n\n\n"
-                                "Click the orange square to begin each task.\n"
-                                "A green circle will appear. Your goal is to click the green circle as quickly as possible.\n"
-                                "You also want to have the smallest number of errors as possible. An error is a click that misses the green circle.\n"
-                                "When you have successfully clicked the circle, you will hear a beep. After the beep, you may click the organge square to start the next task.\n"
-                                "There are a total of 120 tasks. Your progress will be visible the top of the screen."
+                                "Click the orange square to begin each task. "
+                                "A green circle will appear. Your goal is to click the green circle as quickly as possible. "
+                                "You also want to have the smallest number of errors as possible. An error is a click that misses the green circle. "
+                                "When you have successfully clicked the circle, you will hear a beep. After the beep, you may click the organge square to start the next task. "
+                                "There are a total of 120 tasks. Your progress will be visible the top of the screen.",
+                     wraplength = 800
                      )
-        text.config(font=("Courier", 20))
+        text.config(font=("Courier", 15))
         text.grid(row=0, column=0)
 
         self.columnconfigure(0, minsize=1000, weight=6)
